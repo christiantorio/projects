@@ -1,55 +1,22 @@
-# Vagrantfile
-
 Vagrant.configure("2") do |config|
-    config.vm.boot_timeout = 600
-    config.vm.provider "vmware_desktop" do|d|
-      d.build_dir = "."
-      d.has_ssh = true
-      d.memory = 2048
-      d.cpus = 2
-      d.gui = true
-      d.linked_clone = false
-      d.port_forward_network_pause = 120
+    config.vm.provider "vmware_fusion" do |v|
+      v.vmx["memsize"] = "2048" # Set memory size for VMs
+      v.vmx["numvcpus"] = "2"   # Set number of CPUs for VMs
+      v.gui = true 
     end
   
-    # Define Kubernetes cluster nodes
-    (1..2).each do |i|
-      config.vm.define "node#{i}" do |node|
-        node.vm.hostname = "node#{i}"
-        node.vm.provision "shell", inline: <<-SHELL
-          # Update apt and install necessary packages
-          apt-get update
-          apt-get install -y apt-transport-https ca-certificates curl software-properties-common
+    # Create Kubernetes VMs
+    (1..3).each do |i| # Create 3 master nodes
+      config.vm.define "master#{i}" do |node|
+        node.vm.box = "generic/ubuntu2004"
+        node.vm.hostname = "master#{i}"
+      end
+    end
   
-          # Add Docker GPG key and repository
-          curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
-          add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable"
-  
-          # Add Kubernetes GPG key and repository
-          curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
-          echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" | tee /etc/apt/sources.list.d/kubernetes.list
-  
-          # Update apt again after adding repositories
-          apt-get update
-  
-          # Install Docker, kubeadm, kubelet, and kubectl
-          apt-get install -y docker-ce kubelet kubeadm kubectl
-  
-          # Disable swap
-          swapoff -a
-          sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
-  
-          # Initialize Kubernetes master on node1
-          if [[ "$(hostname)" == "node1" ]]; then
-            kubeadm init --pod-network-cidr=10.244.0.0/16
-            mkdir -p $HOME/.kube
-            cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
-            chown $(id -u):$(id -g) $HOME/.kube/config
-  
-            # Install Flannel CNI
-            kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
-          fi
-        SHELL
+    (1..2).each do |i| # Create 2 worker nodes
+      config.vm.define "worker#{i}" do |node|
+        node.vm.box = "generic/ubuntu2004"
+        node.vm.hostname = "worker#{i}"
       end
     end
   end

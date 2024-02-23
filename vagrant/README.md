@@ -11,5 +11,4 @@ brew install hashicorp/tap/hashicorp-vagrant
 
 Installing on macbook with m1 chip is problematic. Finding solutions...
 
-1) Using vmware fusion and incorporating that in my vagrant script...
-
+1) Using vmware fusion and incorporating that in my vagrant script.
