@@ -14,15 +14,27 @@ provider "azurerm" {
   features {}
 }
 
+provider "google" {
+  credentials = file("/Users/christiantorio/Downloads/ctorio-devops-test-ee4876b2ae3c.json")
+  project = "ctorio-devops-test"
+  region  = "westus"
+}
+
 variable "prefix" {
-  default = "ctorio-devops-test"
+  default = "ctorio-devops"
 }
 
-resource "azurerm_resource_group" "jhh" {
+resource "azurerm_resource_group" "example" {
   name     = "${var.prefix}-resources"
-  location = "westus2"
+  location = "westus"
 }
 
+resource "azurerm_virtual_network" "main" {
+  name                = "${var.prefix}-network"
+  address_space       = ["10.0.0.0/16"]
+  location            = azurerm_resource_group.example.location
+  resource_group_name = azurerm_resource_group.example.name
+}
 
 resource "azurerm_subnet" "internal" {
   name                 = "internal"
@@ -64,17 +76,14 @@ resource "azurerm_virtual_machine" "main" {
     create_option     = "FromImage"
     managed_disk_type = "Standard_LRS"
   }
-
   os_profile {
     computer_name  = "hostname"
     admin_username = "testadmin"
     admin_password = "Password1234!"
   }
-
   os_profile_linux_config {
     disable_password_authentication = false
   }
-
   tags = {
     environment = "staging"
   }
